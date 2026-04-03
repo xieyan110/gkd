@@ -95,11 +95,15 @@ android {
         resValues = true
     }
 
-    val gkdSigningConfig = signingConfigs.create("gkd") {
-        storeFile = file(project.properties["GKD_STORE_FILE"] as String)
-        storePassword = project.properties["GKD_STORE_PASSWORD"].toString()
-        keyAlias = project.properties["GKD_KEY_ALIAS"].toString()
-        keyPassword = project.properties["GKD_KEY_PASSWORD"].toString()
+    val gkdSigningConfig = if (project.hasProperty("GKD_STORE_FILE")) {
+        signingConfigs.create("gkd") {
+            storeFile = file(project.properties["GKD_STORE_FILE"] as String)
+            storePassword = project.properties["GKD_STORE_PASSWORD"].toString()
+            keyAlias = project.properties["GKD_KEY_ALIAS"].toString()
+            keyPassword = project.properties["GKD_KEY_PASSWORD"].toString()
+        }
+    } else {
+        null
     }
 
     val playSigningConfig = if (project.hasProperty("PLAY_STORE_FILE")) {
@@ -110,8 +114,10 @@ android {
             keyPassword = project.properties["PLAY_KEY_PASSWORD"].toString()
         }
     } else {
-        gkdSigningConfig
+        null
     }
+
+    val defaultSigningConfig = gkdSigningConfig ?: playSigningConfig
 
     buildTypes {
         all {
@@ -127,7 +133,7 @@ android {
             )
         }
         debug {
-            signingConfig = gkdSigningConfig
+            signingConfig = defaultSigningConfig
             applicationIdSuffix = ".debug"
             resValue("color", "better_black", "#FF5D92")
             debugSuffixPairList.onEach { (key, value) ->
@@ -139,11 +145,11 @@ android {
         flavorDimensions += "channel"
         create("gkd") {
             isDefault = true
-            signingConfig = gkdSigningConfig
+            signingConfig = defaultSigningConfig
             resValue("bool", "is_accessibility_tool", "true")
         }
         create("play") {
-            signingConfig = playSigningConfig
+            signingConfig = defaultSigningConfig
             resValue("bool", "is_accessibility_tool", "false")
         }
         all {
