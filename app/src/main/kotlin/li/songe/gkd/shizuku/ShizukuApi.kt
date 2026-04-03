@@ -159,6 +159,10 @@ class ShizukuContext(
             ?: activityManager?.getTasks())?.firstOrNull()?.topActivity
     }
 
+    fun execCommand(command: String): CommandResult {
+        return serviceWrapper?.execCommandForResult(command) ?: CommandResult(code = null, result = "", error = "Shizuku not connected")
+    }
+
     init {
         if (activityTaskManager != null) {
             activityTaskManager.registerDefault()

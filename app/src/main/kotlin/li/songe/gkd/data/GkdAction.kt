@@ -18,6 +18,7 @@ data class GkdAction(
     val action: String? = null,
     override val position: RawSubscription.Position? = null,
     override val swipeArg: RawSubscription.SwipeArg? = null,
+    override val shellCommand: String? = null,
 ) : RawSubscription.LocationProps
 
 @Serializable
@@ -260,6 +261,27 @@ sealed class ActionPerformer(val action: String) {
         }
     }
 
+    data object Shell : ActionPerformer("shell") {
+        override fun perform(
+            node: AccessibilityNodeInfo,
+            locationProps: RawSubscription.LocationProps,
+        ): ActionResult {
+            val command = locationProps.shellCommand
+            if (command.isNullOrEmpty()) {
+                return ActionResult(
+                    action = action,
+                    result = false,
+                )
+            }
+            val result = shizukuContextFlow.value.execCommand(command).ok
+            return ActionResult(
+                action = action,
+                result = result,
+                shell = true,
+            )
+        }
+    }
+
     companion object {
         private val allSubObjects by lazy {
             arrayOf(
@@ -272,6 +294,7 @@ sealed class ActionPerformer(val action: String) {
                 Back,
                 None,
                 Swipe,
+                Shell,
             )
         }
 

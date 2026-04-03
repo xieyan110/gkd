@@ -2,10 +2,27 @@ name: Build-Apk
 
 on:
   workflow_dispatch:
+    inputs:
+      type:
+        description: 'Build type (debug or release)'
+        required: false
+        default: 'release'
+        type: choice
+        options:
+          - release
+          - debug
+      rename:
+        description: 'Rename APK'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
 
   push:
-    branches:
-      - '**'
+    tags:
+      - 'v*'
     paths-ignore:
       - 'LICENSE'
       - '*.md'
@@ -13,7 +30,6 @@ on:
 
 jobs:
   build:
-    if: ${{ !startsWith(github.event.head_commit.message, 'chore:') && !startsWith(github.event.head_commit.message, 'chore(') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -27,7 +43,7 @@ jobs:
         with:
           cache-encryption-key: ${{ secrets.GRADLE_CACHE_ENCRYPTION_KEY }}
 
-      - name: write gkd secrets info
+      - name: Write GKD secrets info
         run: |
           echo ${{ secrets.GKD_STORE_FILE_BASE64 }} | base64 --decode > ${{ github.workspace }}/gkd.jks
           echo GKD_STORE_FILE='${{ github.workspace }}/gkd.jks' >> gradle.properties
@@ -35,17 +51,37 @@ jobs:
           echo GKD_KEY_ALIAS='${{ secrets.GKD_KEY_ALIAS }}' >> gradle.properties
           echo GKD_KEY_PASSWORD='${{ secrets.GKD_KEY_PASSWORD }}' >> gradle.properties
 
-      - run: echo GKD_RENAME_APK_FLAG=1 >> gradle.properties
+      - name: Set build type
+        run: |
+          BUILD_TYPE="${{ github.event.inputs.type || 'release' }}"
+          echo "BUILD_TYPE=$BUILD_TYPE" >> $GITHUB_ENV
 
-      - run: chmod 777 ./gradlew
-      - run: ./gradlew app:assembleGkdRelease
+      - name: Set rename flag
+        run: |
+          RENAME="${{ github.event.inputs.rename || 'true' }}"
+          echo "GKD_RENAME_APK_FLAG=$RENAME" >> gradle.properties
 
-      - uses: actions/upload-artifact@v7
+      - name: Make gradlew executable
+        run: chmod 777 ./gradlew
+
+      - name: Build APK
+        run: |
+          if [ "$BUILD_TYPE" = "release" ]; then
+            ./gradlew app:assembleGkdRelease
+          else
+            ./gradlew assembleDebug
+          fi
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v7
         with:
-          archive: false
-          path: app/build/outputs/apk/gkd/release/*.apk
+          name: gkd-apk
+          path: |
+            app/build/outputs/apk/gkd/release/*.apk
+            app/build/outputs/apk/debug/*.apk
 
-      - uses: actions/upload-artifact@v7
+      - name: Upload outputs
+        uses: actions/upload-artifact@v7
         with:
           name: outputs
           path: app/build/outputs
