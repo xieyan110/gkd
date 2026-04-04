@@ -32,7 +32,7 @@ private val pendingIntentReqId = atomic(0)
 data class Notif(
     val channel: NotifChannel = NotifChannel.Default,
     val id: Int,
-    val smallIcon: Int = R.drawable.ic_launcher_new,
+    val smallIcon: Int = R.drawable.ic_notif_icon,
     val title: String,
     val text: String? = null,
     val ongoing: Boolean = true,
