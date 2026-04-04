@@ -69,8 +69,8 @@ android {
         targetSdk = rootProject.ext["android.targetSdk"] as Int
 
         applicationId = "li.songe.gkd"
-        versionCode = 81
-        versionName = "1.11.6"
+        versionCode = 82
+        versionName = "1.11.7"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -133,7 +133,7 @@ android {
             )
         }
         debug {
-            signingConfig = defaultSigningConfig
+            signingConfig = signingConfigs.getByName("debug")
             applicationIdSuffix = ".debug"
             resValue("color", "better_black", "#FF5D92")
             debugSuffixPairList.onEach { (key, value) ->
